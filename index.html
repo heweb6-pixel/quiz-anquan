@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="安全刷题">
+<meta name="theme-color" content="#1a73e8">
+<link rel="manifest" href="manifest.json">
+<title>安全考试刷题</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#f0f2f5;font-family:'PingFang SC','Microsoft YaHei',sans-serif;color:#333;-webkit-text-size-adjust:100%}
+
+/* ── Header ─────────────────────────────── */
+.hd{position:fixed;top:0;left:0;right:0;height:50px;background:#1a73e8;color:#fff;display:flex;align-items:center;padding:0 16px;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.hd-title{font-size:1rem;font-weight:600}
+.hd-stats{margin-left:auto;display:flex;gap:14px;font-size:.9rem}
+.hd-stats span{opacity:.92}
+
+/* ── Scrollable content ─────────────────── */
+.pg{position:fixed;top:50px;left:0;right:0;bottom:56px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 12px 12px}
+.pg::-webkit-scrollbar{width:0}
+
+/* ── Bottom nav ─────────────────────────── */
+.bnav{position:fixed;bottom:0;left:0;right:0;height:56px;background:#fff;border-top:1px solid #e8e8e8;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.nt{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;color:#999;padding:6px 0}
+.nt.on{color:#1a73e8}
+.ni{font-size:1.3rem;line-height:1.2}
+.nl{font-size:.62rem;font-weight:500}
+
+/* ── Cards ──────────────────────────────── */
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+
+/* ── Question meta ──────────────────────── */
+.qm{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.qprog{font-size:.8rem;color:#999}
+.qtype{font-size:.75rem;padding:3px 9px;border-radius:8px;font-weight:600}
+.t单选题{background:#e3f2fd;color:#1565c0}
+.t多选题{background:#f3e5f5;color:#6a1b9a}
+.t判断题{background:#e8f5e9;color:#2e7d32}
+.qsubj{font-size:.75rem;padding:3px 9px;border-radius:8px;background:#fff3e0;color:#e65100}
+.case-ctx{background:#fffde7;border-left:3px solid #f9a825;padding:10px 12px;border-radius:4px;margin-bottom:12px;font-size:.9rem;line-height:1.65;color:#555}
+.qtext{font-size:1rem;line-height:1.78;margin-bottom:14px}
+
+/* ── Options ─────────────────────────────── */
+.opt{width:100%;min-height:56px;display:flex;align-items:center;gap:12px;padding:13px 15px;border:2px solid #e0e0e0;border-radius:10px;background:#fafafa;cursor:pointer;text-align:left;font-size:.97rem;line-height:1.5;margin-bottom:8px;transition:border-color .12s,background .12s}
+.opt:active:not([disabled]){background:#efefef}
+.opt.sel{border-color:#1a73e8;background:#e8f0fe}
+.opt.ok{border-color:#34a853!important;background:#e6f4ea!important}
+.opt.er{border-color:#ea4335!important;background:#fce8e6!important}
+.opt[disabled]{cursor:default}
+.olb{font-weight:700;font-size:1rem;flex-shrink:0;min-width:22px}
+
+/* ── Multi submit ───────────────────────── */
+.msub{width:100%;min-height:50px;margin:6px 0;background:#1a73e8;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer}
+.msub:disabled{background:#bbb;cursor:default}
+
+/* ── Feedback ───────────────────────────── */
+.fb{display:none;padding:13px 15px;border-radius:10px;margin:8px 0 4px;font-size:.95rem;font-weight:500;line-height:1.65}
+.fb.show{display:block}
+.fb.ok{background:#e6f4ea;color:#1e7e34;border:1px solid #a8d5b5}
+.fb.er{background:#fce8e6;color:#c62828;border:1px solid #f5c6c3}
+.basis{margin-top:7px;font-size:.83rem;color:#555;font-weight:400}
+
+/* ── Action buttons ─────────────────────── */
+.acts{display:flex;gap:10px;margin-top:8px}
+.bskip{flex:1;min-height:50px;border:1.5px solid #ddd;border-radius:10px;background:#fff;font-size:1rem;color:#555;cursor:pointer}
+.bnext{flex:2;min-height:50px;border:none;border-radius:10px;background:#1a73e8;color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+
+/* ── Overlay + Bottom sheet ─────────────── */
+.ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300}
+.ovl.on{display:block}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;z-index:400;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.28,1);padding-bottom:env(safe-area-inset-bottom)}
+.sheet.on{transform:translateY(0)}
+.sh-drag{width:40px;height:4px;background:#ddd;border-radius:2px;margin:12px auto 0}
+.sh-hd{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 6px;font-size:1rem;font-weight:600}
+.sh-hd button{font-size:1.4rem;border:none;background:none;cursor:pointer;color:#999;padding:4px 6px;line-height:1}
+.sh-bd{padding:4px 20px 16px}
+.sh-bd h4{font-size:.8rem;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:.92rem;cursor:pointer;background:#fafafa;transition:all .12s}
+.chip.on{border-color:#1a73e8;background:#e8f0fe;color:#1a73e8}
+.chip input{accent-color:#1a73e8;width:15px;height:15px;cursor:pointer}
+.sh-sep{border:none;border-top:1px solid #f0f0f0;margin:12px 0}
+.sh-conf{width:calc(100% - 40px);margin:0 20px 16px;min-height:50px;background:#1a73e8;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer}
+.sh-reset{width:calc(100% - 40px);margin:0 20px 12px;min-height:44px;border:1.5px solid #ea4335;background:#fff;color:#ea4335;border-radius:10px;font-size:.95rem;cursor:pointer}
+
+/* ── Exam bar ───────────────────────────── */
+.exbar{background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.extop{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.timer{font-size:1.15rem;font-weight:700;color:#1a73e8}
+.timer.warn{color:#f57c00}
+.timer.dng{color:#ea4335}
+.exprog{font-size:.82rem;color:#666;margin-left:auto}
+.gtoggle{font-size:.82rem;border:none;background:none;color:#1a73e8;cursor:pointer;padding:2px 6px}
+.egrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;overflow:hidden;max-height:120px;transition:max-height .25s}
+.egrid.open{max-height:600px}
+.gb{min-height:36px;border:1px solid #ddd;border-radius:6px;background:#fff;font-size:.8rem;font-weight:500;cursor:pointer}
+.gb.done{background:#c8e6c9;border-color:#81c784}
+.gb.cur{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.exacts{display:flex;gap:10px;margin-top:10px}
+.exacts .bskip{flex:1}
+.exacts .bnext{flex:2}
+.bsubex{flex:2;min-height:50px;border:none;border-radius:10px;background:#34a853;color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+
+/* ── Results ─────────────────────────────── */
+.rcard{background:#fff;border-radius:12px;padding:22px 20px;box-shadow:0 1px 5px rgba(0,0,0,.07)}
+.rscore{font-size:3.5rem;font-weight:700;text-align:center;margin:10px 0 4px;line-height:1}
+.rscore.pass{color:#34a853}
+.rscore.fail{color:#ea4335}
+.rpass{text-align:center;font-size:.95rem;margin-bottom:18px}
+.rstats{display:flex;justify-content:space-around;margin-bottom:18px}
+.rst .v{font-size:1.6rem;font-weight:700;color:#1a73e8;text-align:center}
+.rst .l{font-size:.78rem;color:#999;text-align:center}
+.rbtns{display:flex;gap:10px;margin-bottom:18px}
+.rbtns button{flex:1;min-height:50px;border-radius:10px;font-size:.95rem;font-weight:600;cursor:pointer;border:none}
+.rbpri{background:#1a73e8;color:#fff}
+.rbsec{background:#f0f2f5;color:#333}
+.ri{padding:11px 13px;border-radius:8px;margin-bottom:7px;border:1px solid}
+.ri.ok{background:#e6f4ea;border-color:#a8d5b5}
+.ri.er{background:#fce8e6;border-color:#f5c6c3}
+.ri-q{font-size:.88rem;margin-bottom:3px}
+.ri-a{font-size:.8rem;color:#555}
+
+/* ── Empty ───────────────────────────────── */
+.empty{text-align:center;padding:60px 20px;color:#bbb}
+.empty .ic{font-size:3rem;margin-bottom:12px}
+.empty p{font-size:.95rem}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="hd">
+  <span class="hd-title">安全考试刷题</span>
+  <div class="hd-stats">
+    <span id="hC">✓ 0</span>
+    <span id="hW">✗ 0</span>
+  </div>
+</header>
+
+<!-- Content -->
+<main class="pg" id="pg">
+  <div class="empty"><div class="ic">⏳</div><p>加载中…</p></div>
+</main>
+
+<!-- Bottom nav -->
+<nav class="bnav">
+  <button class="nt on" id="nav-random" onclick="setMode('random')">
+    <span class="ni">🎲</span><span class="nl">随机刷题</span>
+  </button>
+  <button class="nt" id="nav-exam" onclick="setMode('exam')">
+    <span class="ni">📝</span><span class="nl">模拟考试</span>
+  </button>
+  <button class="nt" id="nav-wrong" onclick="setMode('wrong')">
+    <span class="ni">❌</span><span class="nl">错题重练</span>
+  </button>
+  <button class="nt" id="nav-filter" onclick="openSheet()">
+    <span class="ni">⚙️</span><span class="nl">筛选</span>
+  </button>
+</nav>
+
+<!-- Overlay -->
+<div class="ovl" id="ovl" onclick="closeSheet()"></div>
+
+<!-- Filter bottom sheet -->
+<div class="sheet" id="sheet">
+  <div class="sh-drag"></div>
+  <div class="sh-hd">
+    <span>筛选范围</span>
+    <button onclick="closeSheet()">×</button>
+  </div>
+  <div class="sh-bd">
+    <h4>科目</h4>
+    <div class="chips">
+      <label class="chip on" id="chip-安全技术"><input type="checkbox" class="sf" value="安全技术" checked onchange="syncChip(this)"> 安全技术</label>
+      <label class="chip on" id="chip-法律法规"><input type="checkbox" class="sf" value="法律法规" checked onchange="syncChip(this)"> 法律法规</label>
+      <label class="chip on" id="chip-安全管理"><input type="checkbox" class="sf" value="安全管理" checked onchange="syncChip(this)"> 安全管理</label>
+      <label class="chip on" id="chip-B类能力题"><input type="checkbox" class="sf" value="B类能力题" checked onchange="syncChip(this)"> B类能力题</label>
+    </div>
+    <hr class="sh-sep">
+    <h4>题型</h4>
+    <div class="chips">
+      <label class="chip on" id="chip-单选题"><input type="checkbox" class="tf" value="单选题" checked onchange="syncChip(this)"> 单选题</label>
+      <label class="chip on" id="chip-多选题"><input type="checkbox" class="tf" value="多选题" checked onchange="syncChip(this)"> 多选题</label>
+      <label class="chip on" id="chip-判断题"><input type="checkbox" class="tf" value="判断题" checked onchange="syncChip(this)"> 判断题</label>
+    </div>
+  </div>
+  <button class="sh-conf" onclick="applyFilter()">确定</button>
+  <button class="sh-reset" onclick="resetProgress()">清空做题记录</button>
+</div>
+
+<script src="data.js"></script>
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let mode = 'random';
+let queue = [];
+let qIdx  = 0;
+let answered = null;
+let selOpts = new Set();
+
+let examAns = {};
+let examTmr = null;
+let examLeft = 0;
+const EXAM_T = 90 * 60;
+
+let gridOpen = false;
+
+// ── LocalStorage ───────────────────────────────────────────────────
+function ldSt() {
+  try { return JSON.parse(localStorage.getItem('quiz_state')) || {wrong:{},correct:{}}; }
+  catch { return {wrong:{},correct:{}}; }
+}
+function svSt(s) { localStorage.setItem('quiz_state', JSON.stringify(s)); }
+let ST = ldSt();
+
+// ── Init ───────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  if (!window.QUESTION_DATA) {
+    document.getElementById('pg').innerHTML =
+      '<div class="empty"><div class="ic">⚠️</div><p>未找到题库数据，请检查文件</p></div>';
+    return;
+  }
+  updHd();
+  startMode('random');
+});
+
+// ── Filters ────────────────────────────────────────────────────────
+function getF() {
+  const s = new Set([...document.querySelectorAll('.sf:checked')].map(c=>c.value));
+  const t = new Set([...document.querySelectorAll('.tf:checked')].map(c=>c.value));
+  return {s, t};
+}
+function pool() {
+  const {s,t} = getF();
+  return window.QUESTION_DATA.filter(q => s.has(q.subject) && t.has(q.question_type));
+}
+function syncChip(cb) {
+  const chip = cb.closest('.chip');
+  chip.classList.toggle('on', cb.checked);
+}
+
+// ── Mode ───────────────────────────────────────────────────────────
+function setMode(m) {
+  closeSheet();
+  startMode(m);
+}
+
+function startMode(m) {
+  if (examTmr) { clearInterval(examTmr); examTmr = null; }
+  mode = m;
+  gridOpen = false;
+  document.querySelectorAll('.nt').forEach(b => b.classList.remove('on'));
+  const nb = document.getElementById('nav-'+m);
+  if (nb) nb.classList.add('on');
+
+  if (m === 'random') {
+    const p = pool();
+    const fresh = p.filter(q => !ST.correct[q.id] && !ST.wrong[q.id]);
+    const seen  = p.filter(q =>  ST.correct[q.id] ||  ST.wrong[q.id]);
+    queue = [...shuf(fresh), ...shuf(seen)].map(q=>q.id);
+    qIdx = 0; answered = null;
+    if (!queue.length) { showEmpty('当前筛选条件下无题目，请点击底部"筛选"调整'); return; }
+    renderQ();
+
+  } else if (m === 'exam') {
+    startExam();
+
+  } else if (m === 'wrong') {
+    const wIds = Object.keys(ST.wrong).map(Number);
+    const p2 = window.QUESTION_DATA.filter(q => wIds.includes(q.id));
+    if (!p2.length) { showEmpty('暂无错题，继续刷题吧！', '✅'); return; }
+    queue = shuf(p2).map(q=>q.id);
+    qIdx = 0; answered = null;
+    renderQ();
+  }
+}
+
+// ── Random / Wrong ─────────────────────────────────────────────────
+function renderQ() {
+  const q = window.QUESTION_DATA[queue[qIdx]];
+  const multi = q.question_type === '多选题';
+  const prog  = `${qIdx+1} / ${queue.length}`;
+  selOpts.clear();
+
+  const caseH = q.case_context
+    ? `<div class="case-ctx">${esc(q.case_context)}</div>` : '';
+
+  const optsH = q.options.map(o =>
+    `<button class="opt" id="o-${o.label}" onclick="pick('${o.label}')">
+      <span class="olb">${o.label}</span><span>${esc(o.text)}</span>
+    </button>`).join('');
+
+  document.getElementById('pg').innerHTML = `
+    <div class="card">
+      <div class="qm">
+        <span class="qprog">${prog}</span>
+        <span class="qtype t${q.question_type}">${q.question_type}</span>
+        <span class="qsubj">${q.subject}</span>
+      </div>
+      ${caseH}
+      <div class="qtext">${esc(q.question)}</div>
+      <div id="oa">${optsH}</div>
+      ${multi ? `<button class="msub" id="msub" onclick="subMulti()" disabled>提交答案</button>` : ''}
+      <div class="fb" id="fb"></div>
+      <div class="acts" id="preA">
+        <button class="bskip" onclick="skipQ()">跳过</button>
+      </div>
+      <div class="acts" id="postA" style="display:none">
+        <button class="bnext" onclick="nextQ()">下一题 →</button>
+      </div>
+    </div>`;
+  answered = null;
+}
+
+function pick(lbl) {
+  if (answered) return;
+  const q = window.QUESTION_DATA[queue[qIdx]];
+  if (q.question_type === '多选题') {
+    const btn = document.getElementById('o-'+lbl);
+    if (selOpts.has(lbl)) { selOpts.delete(lbl); btn.classList.remove('sel'); }
+    else { selOpts.add(lbl); btn.classList.add('sel'); }
+    document.getElementById('msub').disabled = selOpts.size === 0;
+  } else {
+    chkAns(lbl);
+  }
+}
+
+function subMulti() {
+  if (answered) return;
+  chkAns([...selOpts].sort().join(''));
+}
+
+function chkAns(ua) {
+  const q = window.QUESTION_DATA[queue[qIdx]];
+  const correct = q.answer.split('').sort().join('');
+  const user    = ua.split('').sort().join('');
+  const ok = user === correct;
+  answered = ok ? 'correct' : 'wrong';
+
+  if (ok) { ST.correct[q.id] = true; delete ST.wrong[q.id]; }
+  else    { ST.wrong[q.id]   = true; delete ST.correct[q.id]; }
+  svSt(ST); updHd();
+
+  q.options.forEach(o => {
+    const b = document.getElementById('o-'+o.label);
+    if (!b) return;
+    b.disabled = true;
+    if (correct.includes(o.label))                         b.classList.add('ok');
+    else if (user.includes(o.label) && !correct.includes(o.label)) b.classList.add('er');
+  });
+
+  const fb = document.getElementById('fb');
+  fb.className = 'fb show ' + (ok ? 'ok' : 'er');
+  const basisH = q.basis ? `<div class="basis">📖 ${esc(q.basis)}</div>` : '';
+  if (ok) {
+    fb.innerHTML = `✅ 回答正确！${basisH}`;
+  } else {
+    const ans = correct.split('').map(l => {
+      const o = q.options.find(x=>x.label===l);
+      return o ? `${l}. ${o.text}` : l;
+    }).join('；');
+    fb.innerHTML = `❌ 答错了，正确答案：<strong>${ans}</strong>${basisH}`;
+  }
+
+  const ms = document.getElementById('msub');
+  if (ms) ms.style.display = 'none';
+  document.getElementById('preA').style.display = 'none';
+  document.getElementById('postA').style.display = 'flex';
+}
+
+function skipQ() {
+  qIdx++;
+  if (qIdx >= queue.length) { showEmpty('本批题目已全部完成！', '🎉'); return; }
+  renderQ();
+}
+function nextQ() {
+  qIdx++;
+  if (qIdx >= queue.length) { showEmpty('本批题目已全部完成！', '🎉'); return; }
+  renderQ();
+}
+
+// ── Exam ───────────────────────────────────────────────────────────
+function startExam() {
+  const p = pool();
+  const s = shuf(p.filter(q=>q.question_type==='单选题')).slice(0,40);
+  const t = shuf(p.filter(q=>q.question_type==='判断题')).slice(0,30);
+  const m = shuf(p.filter(q=>q.question_type==='多选题')).slice(0,20);
+  queue = [...s,...t,...m].map(q=>q.id);
+  if (!queue.length) { showEmpty('题目不足，请先调整筛选条件'); return; }
+  examAns  = {};
+  qIdx     = 0;
+  examLeft = EXAM_T;
+  selOpts  = new Set();
+  renderExQ();
+  if (examTmr) clearInterval(examTmr);
+  examTmr = setInterval(() => {
+    examLeft--;
+    const el = document.getElementById('xtmr');
+    if (el) {
+      const mm = String(Math.floor(examLeft/60)).padStart(2,'0');
+      const ss = String(examLeft%60).padStart(2,'0');
+      el.textContent = `${mm}:${ss}`;
+      el.className = 'timer' + (examLeft<300?' dng':examLeft<600?' warn':'');
+    }
+    if (examLeft <= 0) { clearInterval(examTmr); examTmr=null; subExam(true); }
+  }, 1000);
+}
+
+function renderExQ() {
+  const q   = window.QUESTION_DATA[queue[qIdx]];
+  const cnt = Object.keys(examAns).length;
+  const mm  = String(Math.floor(examLeft/60)).padStart(2,'0');
+  const ss  = String(examLeft%60).padStart(2,'0');
+
+  const gridH = queue.map((id,i) => {
+    const cls = 'gb' + (i===qIdx?' cur':examAns[id]!==undefined?' done':'');
+    return `<button class="${cls}" onclick="jmpEx(${i})">${i+1}</button>`;
+  }).join('');
+
+  const optsH = q.options.map(o => {
+    const sel = examAns[q.id] !== undefined && examAns[q.id].includes(o.label);
+    return `<button class="opt${sel?' sel':''}" id="xo-${o.label}" onclick="exPick('${o.label}')">
+      <span class="olb">${o.label}</span><span>${esc(o.text)}</span>
+    </button>`;
+  }).join('');
+
+  const caseH = q.case_context ? `<div class="case-ctx">${esc(q.case_context)}</div>` : '';
+  const isLast = qIdx === queue.length - 1;
+
+  document.getElementById('pg').innerHTML = `
+    <div class="exbar">
+      <div class="extop">
+        <span>⏱ <span class="timer" id="xtmr">${mm}:${ss}</span></span>
+        <span class="exprog">已答 ${cnt}/${queue.length} · 第${qIdx+1}题</span>
+        <button class="gtoggle" onclick="togGrid()">${gridOpen?'收起':'展开'}</button>
+      </div>
+      <div class="egrid${gridOpen?' open':''}" id="egrid">${gridH}</div>
+    </div>
+    <div class="card">
+      <div class="qm">
+        <span class="qtype t${q.question_type}">${q.question_type}</span>
+        <span class="qsubj">${q.subject}</span>
+      </div>
+      ${caseH}
+      <div class="qtext">${esc(q.question)}</div>
+      <div id="xoa">${optsH}</div>
+      <div class="exacts">
+        ${qIdx>0
+          ? `<button class="bskip" onclick="jmpEx(${qIdx-1})">← 上一题</button>`
+          : `<span style="flex:1"></span>`}
+        ${isLast
+          ? `<button class="bsubex" onclick="subExam(false)">提交试卷</button>`
+          : `<button class="bnext" onclick="jmpEx(${qIdx+1})">下一题 →</button>`}
+      </div>
+    </div>`;
+}
+
+function togGrid() {
+  gridOpen = !gridOpen;
+  const g = document.getElementById('egrid');
+  const b = document.querySelector('.gtoggle');
+  if (g) g.classList.toggle('open', gridOpen);
+  if (b) b.textContent = gridOpen ? '收起' : '展开';
+}
+
+function exPick(lbl) {
+  const q = window.QUESTION_DATA[queue[qIdx]];
+  if (q.question_type === '多选题') {
+    if (selOpts.has(lbl)) selOpts.delete(lbl); else selOpts.add(lbl);
+    const ans = [...selOpts].sort().join('');
+    if (ans) examAns[q.id] = ans; else delete examAns[q.id];
+    q.options.forEach(o => {
+      const b = document.getElementById('xo-'+o.label);
+      if (b) b.classList.toggle('sel', selOpts.has(o.label));
+    });
+  } else {
+    examAns[q.id] = lbl;
+    q.options.forEach(o => {
+      const b = document.getElementById('xo-'+o.label);
+      if (b) b.classList.toggle('sel', o.label===lbl);
+    });
+    setTimeout(() => { if (qIdx < queue.length-1) jmpEx(qIdx+1); }, 300);
+  }
+}
+
+function jmpEx(i) {
+  qIdx = i;
+  const qId = queue[i];
+  selOpts = new Set(examAns[qId] ? examAns[qId].split('') : []);
+  renderExQ();
+  document.getElementById('pg').scrollTo(0,0);
+}
+
+function subExam(timeout) {
+  if (examTmr) { clearInterval(examTmr); examTmr=null; }
+  let ok=0, er=0, un=0;
+  const det = [];
+  queue.forEach(id => {
+    const q   = window.QUESTION_DATA[id];
+    const ua  = examAns[id];
+    if (!ua) { un++; det.push({q,ua:null,ok:false}); return; }
+    const isOk = ua.split('').sort().join('') === q.answer.split('').sort().join('');
+    if (isOk) { ok++; ST.correct[id]=true; delete ST.wrong[id]; }
+    else       { er++; ST.wrong[id]=true;  delete ST.correct[id]; }
+    det.push({q,ua,ok:isOk});
+  });
+  svSt(ST); updHd();
+  renderRes(ok, er, un, det, timeout);
+}
+
+function renderRes(ok, er, un, det, timeout) {
+  const total = queue.length;
+  const score = Math.round(ok/total*100);
+  const pass  = score >= 60;
+
+  const revH = det.map(({q,ua,ok:isOk},i) => {
+    const ans = q.answer.split('').map(l => {
+      const o=q.options.find(x=>x.label===l); return o?`${l}.${o.text}`:l;
+    }).join('；');
+    return `<div class="ri ${isOk?'ok':'er'}">
+      <div class="ri-q"><b>Q${i+1}.</b> ${esc(q.question.slice(0,55))}${q.question.length>55?'…':''}</div>
+      <div class="ri-a">你：${ua||'未答'} | 正确：${ans}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('pg').innerHTML = `
+    <div class="rcard">
+      ${timeout?'<p style="color:#e65100;text-align:center;margin-bottom:4px;font-size:.9rem">⏰ 时间到！</p>':''}
+      <p style="text-align:center;color:#999;font-size:.9rem;margin-bottom:4px">本次考试成绩</p>
+      <div class="rscore ${pass?'pass':'fail'}">${score}分</div>
+      <p class="rpass" style="color:${pass?'#34a853':'#ea4335'}">${pass?'🎉 恭喜通过！':'加油，你可以的！'}</p>
+      <div class="rstats">
+        <div class="rst"><div class="v">${ok}</div><div class="l">答对</div></div>
+        <div class="rst"><div class="v">${er}</div><div class="l">答错</div></div>
+        <div class="rst"><div class="v">${un}</div><div class="l">未答</div></div>
+      </div>
+      <div class="rbtns">
+        <button class="rbpri" onclick="startMode('exam')">再来一次</button>
+        <button class="rbsec" onclick="startMode('wrong')">错题重练</button>
+      </div>
+      <div>${revH}</div>
+    </div>`;
+  document.getElementById('pg').scrollTo(0,0);
+}
+
+// ── Filter sheet ───────────────────────────────────────────────────
+function openSheet() {
+  document.getElementById('ovl').classList.add('on');
+  document.getElementById('sheet').classList.add('on');
+}
+function closeSheet() {
+  document.getElementById('ovl').classList.remove('on');
+  document.getElementById('sheet').classList.remove('on');
+}
+function applyFilter() {
+  closeSheet();
+  if (mode !== 'exam') startMode(mode);
+}
+function resetProgress() {
+  if (!confirm('确定清空所有做题记录吗？此操作不可撤销。')) return;
+  ST = {wrong:{},correct:{}};
+  svSt(ST); updHd(); closeSheet(); startMode(mode);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────
+function shuf(a) {
+  const r=[...a];
+  for(let i=r.length-1;i>0;i--){const j=0|Math.random()*(i+1);[r[i],r[j]]=[r[j],r[i]];}
+  return r;
+}
+function esc(s) {
+  if(!s)return'';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+function showEmpty(msg, ic='📭') {
+  document.getElementById('pg').innerHTML =
+    `<div class="empty"><div class="ic">${ic}</div><p>${msg}</p></div>`;
+}
+function updHd() {
+  const c = Object.keys(ST.correct).length;
+  const w = Object.keys(ST.wrong).length;
+  document.getElementById('hC').textContent = `✓ ${c}`;
+  document.getElementById('hW').textContent = `✗ ${w}`;
+}
+</script>
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');</script>
+</body>
+</html>

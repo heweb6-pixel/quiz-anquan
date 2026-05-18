@@ -1,0 +1,18 @@
+{
+  "name": "安全考试刷题",
+  "short_name": "安全刷题",
+  "description": "建筑安全管理考试刷题工具",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#1a73e8",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
