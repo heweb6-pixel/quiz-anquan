@@ -42,6 +42,7 @@ html,body{height:100%;background:#f0f2f5;font-family:'PingFang SC','Microsoft Ya
 .t判断题{background:#e8f5e9;color:#2e7d32}
 .qsubj{font-size:.75rem;padding:3px 9px;border-radius:8px;background:#fff3e0;color:#e65100}
 .case-ctx{background:#fffde7;border-left:3px solid #f9a825;padding:10px 12px;border-radius:4px;margin-bottom:12px;font-size:.9rem;line-height:1.65;color:#555}
+.q-img{max-width:100%;border-radius:8px;margin-bottom:12px;display:block;background:#f5f5f5}
 .qtext{font-size:1rem;line-height:1.78;margin-bottom:14px}
 
 /* ── Options ─────────────────────────────── */
@@ -287,6 +288,7 @@ function renderQ() {
 
   const caseH = q.case_context
     ? `<div class="case-ctx">${esc(q.case_context)}</div>` : '';
+  const imgH = q.image ? `<img src="images/${q.image}" class="q-img" alt="题目图片" loading="lazy" onerror="this.style.display='none'">` : '';
 
   const optsH = q.options.map(o =>
     `<button class="opt" id="o-${o.label}" onclick="pick('${o.label}')">
@@ -301,6 +303,7 @@ function renderQ() {
         <span class="qsubj">${q.subject}</span>
       </div>
       ${caseH}
+      ${imgH}
       <div class="qtext">${esc(q.question)}</div>
       <div id="oa">${optsH}</div>
       ${multi ? `<button class="msub" id="msub" onclick="subMulti()" disabled>提交答案</button>` : ''}
@@ -428,6 +431,7 @@ function renderExQ() {
   }).join('');
 
   const caseH = q.case_context ? `<div class="case-ctx">${esc(q.case_context)}</div>` : '';
+  const imgH2 = q.image ? `<img src="images/${q.image}" class="q-img" alt="题目图片" loading="lazy" onerror="this.style.display='none'">` : '';
   const isLast = qIdx === queue.length - 1;
 
   document.getElementById('pg').innerHTML = `
@@ -445,6 +449,7 @@ function renderExQ() {
         <span class="qsubj">${q.subject}</span>
       </div>
       ${caseH}
+      ${imgH2}
       <div class="qtext">${esc(q.question)}</div>
       <div id="xoa">${optsH}</div>
       <div class="exacts">
@@ -586,6 +591,6 @@ function updHd() {
   document.getElementById('hW').textContent = `✗ ${w}`;
 }
 </script>
-<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');</script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js");</script>
 </body>
 </html>
